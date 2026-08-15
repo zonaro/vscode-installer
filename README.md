@@ -66,3 +66,4 @@ cd vscode-installer
 - If VS Code is open, the script closes it before installing.
 - Supports x64 and arm64 architectures.
 - The download comes from the official Microsoft endpoint: `https://code.visualstudio.com/sha/download?build=stable&os=linux-deb-*`
+- On Arch-based systems, the script automatically patches a known upstream `debtap` bug (a broken pkgfile check that makes `debtap` refuse to convert even after `debtap -u`), and skips the ~1 GB database update when it is less than 7 days old.

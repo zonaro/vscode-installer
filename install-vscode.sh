@@ -88,9 +88,28 @@ install_arch() {
     die "Arch-based distro detected but the 'debtap' converter is missing.
 Install it first (Big Linux and Manjaro ship it; otherwise: yay -S debtap or pamac build debtap)."
   fi
+
+  # Some debtap versions (upstream and Big Linux's fork) ship a broken pkgfile
+  # check: the pattern '*.files?(.[[:digit:]]{3})' never matches modern pkgfile
+  # databases, so debtap refuses to convert even after a successful "debtap -u".
+  # Patch the pattern to a working one (idempotent, covers both install paths).
+  for f in /usr/sbin/debtap /usr/bin/debtap; do
+    if [ -f "$f" ] && grep -qF "grep -E '*.files?(.[[:digit:]]{3})'" "$f" 2>/dev/null; then
+      warn "Patching the broken pkgfile check in $f ..."
+      sudo sed -i "s|grep -E '\*\.files?(\.\[\[:digit:\]\]{3})'|grep -E '\\.files'|g" "$f"
+    fi
+  done
+
+  # Update the debtap database only if it is missing or older than 7 days
+  # (a full update re-downloads ~1 GB of Debian/Ubuntu package lists).
+  if find /var/cache/debtap -maxdepth 1 -name '*-packages-files' -mtime -7 2>/dev/null | grep -q .; then
+    info "debtap database is up to date; skipping update."
+  else
+    info "Updating the debtap database (first run may take a while) ..."
+    sudo debtap -u || warn "debtap database update failed; continuing with existing data."
+  fi
+
   WORK="$(mktemp -d /tmp/vscode-debtap-XXXXXX)"
-  info "Updating the debtap database (first run may take a while) ..."
-  sudo debtap -u || warn "debtap database update failed; continuing with existing data."
   info "Converting the .deb to an Arch package ..."
   "$DEBTAP" -Q -o "$WORK" "$DEB" || die "debtap conversion failed."
   info "Installing with pacman ..."
