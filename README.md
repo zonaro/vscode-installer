@@ -7,32 +7,20 @@ It runs fully unattended — no questions, no interactive prompts (the only prom
 ## What it does
 
 1. Detects your CPU architecture (x64 / arm64)
-2. Downloads the latest stable `.deb` package from the official Microsoft download endpoint
+2. Downloads the latest stable Linux `tar.gz` from the official Microsoft download endpoint
 3. Closes any running VS Code instances
-4. Detects your distribution and installs the package natively (converting it when needed)
-5. Cleans up the downloaded file
+4. Extracts it to `/opt/vscode`
+5. Creates the `/usr/bin/code` symlink and a desktop entry with icon
+6. Cleans up the downloaded file
 
-## Distro support
+## Why tar.gz?
 
-| Distro family | Package manager | Install method |
-|---|---|---|
-| Debian, Ubuntu, Linux Mint, Pop!_OS, ... | `apt` / `dpkg` | installs the `.deb` directly |
-| Arch, Manjaro, **Big Linux**, EndeavourOS, ... | `pacman` | converts with `debtap`, installs with `pacman -U` |
-| Fedora, RHEL, CentOS, openSUSE, Mageia, ... | `dnf` / `yum` / `zypper` | converts with `alien`, installs the `.rpm` |
-| Others (Gentoo, Alpine, Void, ...) | — | installs with `dpkg` if available (best effort) |
-
-For non-Debian distros the system must have a **package converter** installed:
-
-- **Arch-based:** `debtap` — Big Linux and Manjaro ship it out of the box. Otherwise: `yay -S debtap` or `pamac build debtap`
-- **RPM-based:** `alien` — `sudo dnf install alien` (Fedora) or `sudo zypper install alien` (openSUSE)
-
-If the converter is missing, the script stops with clear installation instructions.
+The official VS Code `tar.gz` is **self-contained** — it bundles the application and its runtime libraries, so it works on **any** Linux distribution with no package conversion at all (no `debtap`, no `alien`, no `dpkg`).
 
 ## Requirements
 
-- Any Linux distribution (see table above)
-- `curl` and `sudo` installed
-- The appropriate package converter for non-Debian distros (see above)
+- Any Linux distribution
+- `curl`, `sudo` and `tar` installed
 - Sudo access (you will be asked for your password once)
 
 > **Important:** run it from a standalone terminal — **not** from inside VS Code's integrated terminal, because the script closes VS Code before installing.
@@ -63,10 +51,26 @@ cd vscode-installer
 ./install-vscode.sh
 ```
 
+## What gets installed
+
+| Path | Purpose |
+|---|---|
+| `/opt/vscode/` | The VS Code application files |
+| `/usr/bin/code` | Symlink to the `code` command |
+| `/usr/share/applications/code.desktop` | Desktop entry (app menu) |
+| `/usr/share/pixmaps/code.png` | Application icon |
+
+Your settings, extensions and workspace data live in `~/.config/Code` and `~/.vscode`, so they are preserved across reinstalls.
+
+## Uninstall
+
+```bash
+sudo rm -rf /opt/vscode /usr/bin/code /usr/share/applications/code.desktop /usr/share/pixmaps/code.png
+```
+
 ## Notes
 
 - The script never asks questions; the only prompt you may see is the sudo password prompt.
 - If VS Code is open, the script closes it before installing.
 - Supports x64 and arm64 architectures.
-- The download comes from the official Microsoft endpoint: `https://code.visualstudio.com/sha/download?build=stable&os=linux-deb-*`
-- On Arch-based systems, the script automatically patches a known upstream `debtap` bug (a broken pkgfile check that makes `debtap` refuse to convert even after `debtap -u`), and skips the ~1 GB database update when it is less than 7 days old.
+- The download comes from the official Microsoft endpoint: `https://code.visualstudio.com/sha/download?build=stable&os=linux-*`
