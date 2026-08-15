@@ -40,16 +40,20 @@ If the converter is missing, the script stops with clear installation instructio
 
 ## Usage
 
-### Via curl from GitHub raw (no clone needed)
+### Via curl (no clone needed)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/zonaro/vscode-installer/main/install-vscode.sh | bash
+curl -fsSL https://cdn.jsdelivr.net/gh/zonaro/vscode-installer@main/install-vscode.sh | bash
 ```
+
+> jsDelivr serves the latest commit automatically. The official GitHub raw URL
+> (`https://raw.githubusercontent.com/zonaro/vscode-installer/main/install-vscode.sh`)
+> also works, but its CDN may briefly serve a cached older version after a push.
 
 ### Via curl with sudo (if your user is not in sudoers)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/zonaro/vscode-installer/main/install-vscode.sh | sudo bash
+curl -fsSL https://cdn.jsdelivr.net/gh/zonaro/vscode-installer@main/install-vscode.sh | sudo bash
 ```
 
 ### Directly from this repository

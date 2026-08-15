@@ -21,7 +21,7 @@
 #
 # Usage:
 #   ./install-vscode.sh
-#   curl -fsSL https://raw.githubusercontent.com/zonaro/vscode-installer/main/install-vscode.sh | bash
+#   curl -fsSL https://cdn.jsdelivr.net/gh/zonaro/vscode-installer@main/install-vscode.sh | bash
 #
 set -euo pipefail
 
