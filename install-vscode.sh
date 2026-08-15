@@ -45,13 +45,7 @@ for cmd in curl sudo; do
   command -v "$cmd" >/dev/null 2>&1 || die "Required command not found: $cmd"
 done
 
-# ------------------------------------------ 1. open the official website ----
-info "Opening the official VS Code website ..."
-if command -v xdg-open >/dev/null 2>&1; then
-  xdg-open "https://code.visualstudio.com/" >/dev/null 2>&1 || true
-fi
-
-# -------------------------------------------------- 2. detect architecture ----
+# -------------------------------------------------- 1. detect architecture ----
 ARCH="$(uname -m)"
 case "$ARCH" in
   x86_64|amd64)  OS="linux-deb-x64"   ;;
@@ -62,17 +56,17 @@ esac
 URL="https://code.visualstudio.com/sha/download?build=stable&os=${OS}"
 DEB="$(mktemp /tmp/vscode-XXXXXX.deb)"
 
-# ------------------------------------------------- 3. download the .deb -------
+# ------------------------------------------------- 2. download the .deb -------
 info "Downloading the latest VS Code package ($OS) ..."
 curl -fL --retry 3 --retry-delay 2 -o "$DEB" "$URL" || die "Download failed: $URL"
 
-# ----------------------------------------- 4. close running VS Code ----------
+# ----------------------------------------- 3. close running VS Code ----------
 info "Closing running VS Code instances ..."
 pkill -f '/usr/share/code/code' 2>/dev/null || true
 pkill -f 'code --' 2>/dev/null || true
 sleep 1
 
-# ----------------------------------------------------- 5. install ------------
+# ----------------------------------------------------- 4. install ------------
 # Debian/Ubuntu: install the .deb directly with dpkg + apt dependency fix.
 install_deb() {
   command -v dpkg >/dev/null 2>&1 || die "dpkg not found."
@@ -156,7 +150,7 @@ else
 Install a converter first: debtap (Arch-based), alien (RPM-based) or dpkg (others)."
 fi
 
-# ------------------------------------------------------ 6. cleanup ------------
+# ------------------------------------------------------ 5. cleanup ------------
 rm -f "$DEB"
 
 info "Done. Installed version:"

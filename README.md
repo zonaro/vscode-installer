@@ -6,12 +6,11 @@ It runs fully unattended — no questions, no interactive prompts (the only prom
 
 ## What it does
 
-1. Opens the official VS Code website (<https://code.visualstudio.com/>)
-2. Detects your CPU architecture (x64 / arm64)
-3. Downloads the latest stable `.deb` package from the official Microsoft download endpoint
-4. Closes any running VS Code instances
-5. Detects your distribution and installs the package natively (converting it when needed)
-6. Cleans up the downloaded file
+1. Detects your CPU architecture (x64 / arm64)
+2. Downloads the latest stable `.deb` package from the official Microsoft download endpoint
+3. Closes any running VS Code instances
+4. Detects your distribution and installs the package natively (converting it when needed)
+5. Cleans up the downloaded file
 
 ## Distro support
 
