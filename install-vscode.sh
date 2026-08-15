@@ -5,9 +5,19 @@
 # Downloads the latest stable Microsoft Visual Studio Code (.deb) from the
 # official Microsoft website and installs it on this machine.
 #
-# It runs fully unattended: no questions, no prompts (except the sudo
-# password prompt required by the system). Running VS Code instances are
-# closed before the package is installed.
+# Distro support:
+#   - Debian/Ubuntu (apt/dpkg)          -> installs the .deb directly
+#   - Arch-based (pacman), incl. Big Linux, Manjaro, EndeavourOS
+#                                       -> converts with debtap, installs with pacman
+#   - RPM-based (dnf/yum/zypper)        -> converts with alien, installs the .rpm
+#   - Others with dpkg available        -> installs with dpkg (best effort)
+#
+# For non-Debian distros the system must have a package converter installed:
+#   - Arch-based: debtap (Big Linux and Manjaro ship it; otherwise yay -S debtap)
+#   - RPM-based:  alien (sudo dnf install alien / sudo zypper install alien)
+#
+# Fully unattended: no questions, no prompts (except the sudo password prompt).
+# Running VS Code instances are closed before installing.
 #
 # Usage:
 #   ./install-vscode.sh
@@ -31,7 +41,7 @@ if [ "${TERM_PROGRAM:-}" = "vscode" ]; then
 fi
 
 # ----------------------------------------------------- required commands ----
-for cmd in curl sudo dpkg; do
+for cmd in curl sudo; do
   command -v "$cmd" >/dev/null 2>&1 || die "Required command not found: $cmd"
 done
 
@@ -63,9 +73,69 @@ pkill -f 'code --' 2>/dev/null || true
 sleep 1
 
 # ----------------------------------------------------- 5. install ------------
-info "Installing the package (sudo may ask for your password once) ..."
-sudo dpkg -i "$DEB" 2>/dev/null || sudo apt-get install -f -y
-sudo apt-get install -f -y >/dev/null
+# Debian/Ubuntu: install the .deb directly with dpkg + apt dependency fix.
+install_deb() {
+  command -v dpkg >/dev/null 2>&1 || die "dpkg not found."
+  info "Installing with dpkg/apt ..."
+  sudo dpkg -i "$DEB" 2>/dev/null || sudo apt-get install -f -y
+  sudo apt-get install -f -y >/dev/null
+}
+
+# Arch-based (Arch, Manjaro, Big Linux, EndeavourOS, ...): convert with debtap.
+install_arch() {
+  DEBTAP="$(command -v debtap || command -v debtap-mod || true)"
+  if [ -z "$DEBTAP" ]; then
+    die "Arch-based distro detected but the 'debtap' converter is missing.
+Install it first (Big Linux and Manjaro ship it; otherwise: yay -S debtap or pamac build debtap)."
+  fi
+  WORK="$(mktemp -d /tmp/vscode-debtap-XXXXXX)"
+  info "Updating the debtap database (first run may take a while) ..."
+  sudo debtap -u || warn "debtap database update failed; continuing with existing data."
+  info "Converting the .deb to an Arch package ..."
+  "$DEBTAP" -Q -o "$WORK" "$DEB" || die "debtap conversion failed."
+  info "Installing with pacman ..."
+  sudo pacman -U --noconfirm "$WORK"/*.pkg.tar.*
+  rm -rf "$WORK"
+}
+
+# RPM-based (Fedora, RHEL, CentOS, openSUSE, Mageia, ...): convert with alien.
+install_rpm() {
+  if ! command -v alien >/dev/null 2>&1; then
+    die "RPM-based distro detected but the 'alien' converter is missing.
+Install it first (Fedora: sudo dnf install alien, openSUSE: sudo zypper install alien)."
+  fi
+  WORK="$(mktemp -d /tmp/vscode-alien-XXXXXX)"
+  info "Converting the .deb to an RPM package ..."
+  ( cd "$WORK" && sudo alien --to-rpm --scripts "$DEB" ) || die "alien conversion failed."
+  if command -v dnf >/dev/null 2>&1; then
+    info "Installing with dnf ..."
+    sudo dnf install -y "$WORK"/*.rpm
+  elif command -v zypper >/dev/null 2>&1; then
+    info "Installing with zypper ..."
+    sudo zypper --non-interactive install "$WORK"/*.rpm
+  else
+    info "Installing with yum ..."
+    sudo yum install -y "$WORK"/*.rpm
+  fi
+  rm -rf "$WORK"
+}
+
+# pacman is checked first: some Arch-based distros (e.g. Big Linux) ship a
+# fake "apt-get" shim that redirects to pamac, so apt-get alone is not a
+# reliable Debian indicator. Real Debian/Ubuntu systems never have pacman.
+if command -v pacman >/dev/null 2>&1; then
+  install_arch
+elif command -v apt-get >/dev/null 2>&1 && command -v dpkg >/dev/null 2>&1; then
+  install_deb
+elif command -v dnf >/dev/null 2>&1 || command -v zypper >/dev/null 2>&1 || command -v yum >/dev/null 2>&1; then
+  install_rpm
+elif command -v dpkg >/dev/null 2>&1; then
+  info "No native package manager detected; installing with dpkg (best effort) ..."
+  sudo dpkg -i "$DEB" || true
+else
+  die "Unsupported distribution: no package manager or .deb converter found.
+Install a converter first: debtap (Arch-based), alien (RPM-based) or dpkg (others)."
+fi
 
 # ------------------------------------------------------ 6. cleanup ------------
 rm -f "$DEB"

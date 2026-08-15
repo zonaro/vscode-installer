@@ -1,6 +1,6 @@
 # vscode-installer
 
-One-command installer for the latest stable **Microsoft Visual Studio Code** on Debian/Ubuntu (`.deb`).
+One-command installer for the latest stable **Microsoft Visual Studio Code** on any Linux distribution.
 
 It runs fully unattended — no questions, no interactive prompts (the only prompt you may see is the system's sudo password prompt).
 
@@ -10,13 +10,30 @@ It runs fully unattended — no questions, no interactive prompts (the only prom
 2. Detects your CPU architecture (x64 / arm64)
 3. Downloads the latest stable `.deb` package from the official Microsoft download endpoint
 4. Closes any running VS Code instances
-5. Installs the package with `dpkg` / `apt`
+5. Detects your distribution and installs the package natively (converting it when needed)
 6. Cleans up the downloaded file
+
+## Distro support
+
+| Distro family | Package manager | Install method |
+|---|---|---|
+| Debian, Ubuntu, Linux Mint, Pop!_OS, ... | `apt` / `dpkg` | installs the `.deb` directly |
+| Arch, Manjaro, **Big Linux**, EndeavourOS, ... | `pacman` | converts with `debtap`, installs with `pacman -U` |
+| Fedora, RHEL, CentOS, openSUSE, Mageia, ... | `dnf` / `yum` / `zypper` | converts with `alien`, installs the `.rpm` |
+| Others (Gentoo, Alpine, Void, ...) | — | installs with `dpkg` if available (best effort) |
+
+For non-Debian distros the system must have a **package converter** installed:
+
+- **Arch-based:** `debtap` — Big Linux and Manjaro ship it out of the box. Otherwise: `yay -S debtap` or `pamac build debtap`
+- **RPM-based:** `alien` — `sudo dnf install alien` (Fedora) or `sudo zypper install alien` (openSUSE)
+
+If the converter is missing, the script stops with clear installation instructions.
 
 ## Requirements
 
-- Debian/Ubuntu-based Linux distribution
-- `curl`, `sudo` and `dpkg` installed
+- Any Linux distribution (see table above)
+- `curl` and `sudo` installed
+- The appropriate package converter for non-Debian distros (see above)
 - Sudo access (you will be asked for your password once)
 
 > **Important:** run it from a standalone terminal — **not** from inside VS Code's integrated terminal, because the script closes VS Code before installing.
