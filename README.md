@@ -51,6 +51,29 @@ cd vscode-installer
 ./install-vscode.sh
 ```
 
+## Options
+
+| Option / Variable | Description |
+|---|---|
+| `--no-banner` | Skip the ASCII art banner |
+| `--help` | Show usage information |
+| `VC_INSTALL_QUIET=1` | Environment variable to skip the banner (useful for CI/automation) |
+
+### Examples
+
+```bash
+# Skip banner via flag
+./install-vscode.sh --no-banner
+
+# Skip banner via environment variable (great for CI/CD)
+VC_INSTALL_QUIET=1 ./install-vscode.sh
+
+# Show help
+./install-vscode.sh --help
+```
+
+The script displays a beautiful Unicode banner by default in supported terminals. In minimal environments (CI, dumb terminals, non-TTY), it automatically falls back to a clean text banner.
+
 ## What gets installed
 
 | Path | Purpose |
