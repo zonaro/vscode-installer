@@ -15,26 +15,82 @@
 #   ./install-vscode.sh
 #   curl -fsSL https://cdn.jsdelivr.net/gh/zonaro/vscode-installer@main/install-vscode.sh | bash
 #
+# Options:
+#   --no-banner    Skip the ASCII art banner
+#   --help         Show this help message
+#
+# Environment variables:
+#   VC_INSTALL_QUIET=1  Skip the ASCII art banner (same as --no-banner)
+
+set -euo pipefail
 
 # ----------------------------------------------------------- VS Code ASCII art --
-cat <<'EOF'
-    ██████╗ ███████╗███╗   ██╗███████╗███████╗███████╗
-    ██╔══██╗██╔════╝████╗  ██║██╔════╝██╔════╝██╔════╝
-    ██║  ██║█████╗  ██╔██╗ ██║███████╗█████╗  ███████╗
-    ██║  ██║██╔══╝  ██║╚██╗██║╚════██║██╔══╝  ╚════██║
-    ██████╔╝███████╗██║ ╚████║███████║███████╗███████║
-    ╚═════╝ ╚══════╝╚═╝  ╚═══╝╚══════╝╚══════╝╚══════╝
+print_banner() {
+  # Check if terminal supports Unicode/box-drawing characters
+  # If not, fall back to a simple text banner
+  if [ -t 1 ] && [ "${TERM:-}" != "dumb" ] && command -v tput >/dev/null 2>&1 && tput colors >/dev/null 2>&1; then
+    cat <<'EOF'
+                                #*++*     
+                            ****+===++* 
+                        *******+======+
+            #          ********#*+++++++
+          #****#     +*********#++++++++
+          ******** #**********  ++++++++
+          #********##******    ++++++++
+            #*********##       ++++++++
+            *##*********#      ++++++++
+          ****###*********#    ++++++++
+          *#####** #**********  ++++++++
+          **##**     #***********+++++++
+                      #*********+++++++
+                        #*******+++++++
+                          #*****++++*# 
+                            %#***#     
     
     Visual Studio Code Installer for Linux
 EOF
-echo
+  else
+    cat <<'EOF'
+    ==========================================
+    Visual Studio Code Installer for Linux
+    ==========================================
+EOF
+  fi
+  printf '\n'
+}
 
-set -euo pipefail
+# Parse command-line arguments
+SHOW_BANNER=true
+for arg in "$@"; do
+  case "$arg" in
+    --no-banner)
+      SHOW_BANNER=false
+      ;;
+    --help)
+      # Print only the header documentation (up to the first non-comment line after the header)
+      sed -n '2,/^set -euo pipefail$/p' "$0" | head -n -1 | cut -c4-
+      exit 0
+      ;;
+    *)
+      die "Unknown option: $arg"
+      ;;
+  esac
+done
+
+# Environment variable override
+if [ "${VC_INSTALL_QUIET:-}" = "1" ]; then
+  SHOW_BANNER=false
+fi
 
 # ------------------------------------------------------------------ helpers --
 info() { printf '\033[1;34m[INFO]\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33m[WARN]\033[0m %s\n' "$*" >&2; }
 die()  { printf '\033[1;31m[ERROR]\033[0m %s\n' "$*" >&2; exit 1; }
+
+# Print banner if not suppressed
+if [ "$SHOW_BANNER" = true ]; then
+  print_banner
+fi
 
 # ------------------------------------------- refuse to run inside VS Code ----
 # The script closes VS Code before installing; running it from VS Code's own
